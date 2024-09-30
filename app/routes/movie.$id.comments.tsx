@@ -25,19 +25,6 @@ export async function loader({ params: { id } }: LoaderFunctionArgs) {
   return json(data);
 }
 
-export function ErrorBoundary() {
-  const error = useRouteError();
-
-  if (isRouteErrorResponse(error)) {
-    switch (error.status) {
-      case 404:
-        return <h1>Movie not found</h1>;
-      default:
-        return <h1>Something went wrong</h1>;
-    }
-  }
-}
-
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
@@ -67,6 +54,19 @@ export async function action({ request }: ActionFunctionArgs) {
         where: { id: formData.get("id") as string },
       }),
     );
+  }
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+
+  if (isRouteErrorResponse(error)) {
+    switch (error.status) {
+      case 404:
+        return <h1>Movie not found</h1>;
+      default:
+        return <h1>Something went wrong</h1>;
+    }
   }
 }
 
