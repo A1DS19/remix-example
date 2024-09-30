@@ -60,6 +60,14 @@ export async function action({ request }: ActionFunctionArgs) {
       }),
     );
   }
+
+  if (request.method === "DELETE") {
+    return json(
+      await db.comment.delete({
+        where: { id: formData.get("id") as string },
+      }),
+    );
+  }
 }
 
 export default function MovieCommentsRoute() {
@@ -114,12 +122,21 @@ export default function MovieCommentsRoute() {
               <div className="flex justify-between">
                 <p>{comment.message}</p>
 
-                <button
-                  onClick={() => handleEdit(comment)}
-                  className="w-5 h-5 cursor-pointer"
-                >
-                  <img src="/icons/edit.svg" alt="Edit" />
-                </button>
+                <div>
+                  <button
+                    onClick={() => handleEdit(comment)}
+                    className="w-5 h-5 cursor-pointer"
+                  >
+                    <img src="/icons/edit.svg" alt="Edit" />
+                  </button>
+
+                  <Form method="DELETE">
+                    <input type="hidden" name="id" value={comment.id} />
+                    <button type="submit" className="w-5 h-5 cursor-pointer">
+                      <img src="/icons/delete.svg" alt="Delete" />
+                    </button>
+                  </Form>
+                </div>
               </div>
               <p className="text-sm text-gray-500">
                 {new Date(comment.createdAt).toLocaleDateString()}
