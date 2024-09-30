@@ -1,0 +1,92 @@
+import { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import {
+  Form,
+  isRouteErrorResponse,
+  json,
+  useLoaderData,
+  useNavigation,
+  useParams,
+  useRouteError,
+} from "@remix-run/react";
+import { db } from "~/utils/db.server";
+
+export async function loader({ params: { id } }: LoaderFunctionArgs) {
+  const data = await db.comment.findMany({
+    where: { movieId: id },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!data) {
+    throw json("Movie not found", { status: 404 });
+  }
+
+  return json(data);
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+
+  if (isRouteErrorResponse(error)) {
+    switch (error.status) {
+      case 404:
+        return <h1>Movie not found</h1>;
+      default:
+        return <h1>Something went wrong</h1>;
+    }
+  }
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+
+  const data = await db.comment.create({
+    data: {
+      message: formData.get("comment") as string,
+      movieId: formData.get("id") as string,
+    },
+  });
+
+  return json(data);
+}
+
+export default function MovieCommentsRoute() {
+  const { id } = useParams<{ id: string }>();
+  const comments = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
+
+  return (
+    <div className="rounded border p-3">
+      <h1 className="text-xl font-semibold mb-5">Your Opinion</h1>
+      <div>
+        <Form method="POST">
+          <textarea
+            name="comment"
+            className="w-full border border-teal-500 rounded-lg p-2"
+          ></textarea>
+          <input type="hidden" name="id" value={id} />
+          <button
+            type="submit"
+            className="bg-teal-500 px-4 py-2 rounded-lg text-white"
+            disabled={
+              navigation.state === "submitting" ||
+              navigation.state === "loading"
+            }
+          >
+            {navigation.state === "submitting" ? "Submitting..." : "Submit"}
+          </button>
+        </Form>
+
+        <div className="mt-5 flex flex-col gap-y-3">
+          {comments.map((comment) => (
+            <div key={comment.id} className="border p-3 rounded-lg">
+              <p>{comment.message}</p>
+              <p className="text-sm text-gray-500">
+                {new Date(comment.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
